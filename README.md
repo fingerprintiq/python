@@ -56,7 +56,12 @@ from fastapi import FastAPI, Request
 from fingerprintiq.sentinel.fastapi import SentinelMiddleware
 
 app = FastAPI()
-app.add_middleware(SentinelMiddleware, api_key="fiq_live_...")
+app.add_middleware(
+    SentinelMiddleware,
+    api_key="fiq_live_...",
+    mode="blocking",
+    timeout=1.0,
+)
 
 @app.get("/api/data")
 def handler(request: Request):
@@ -65,6 +70,8 @@ def handler(request: Request):
         return {"blocked": True}
     return {"ok": True}
 ```
+
+The default middleware mode is `"background"` so FingerprintIQ inspection does not add network latency to the request path. Use `mode="blocking"` only when the handler needs `request.state.sentinel` before responding.
 
 ## Pulse — CLI analytics
 

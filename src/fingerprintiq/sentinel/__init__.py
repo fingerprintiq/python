@@ -1,5 +1,5 @@
 """Sentinel — API caller classification."""
 
-from fingerprintiq.sentinel._core import Sentinel, SentinelResult
+from fingerprintiq.sentinel._core import Sentinel, SentinelMode, SentinelResult
 
-__all__ = ["Sentinel", "SentinelResult"]
+__all__ = ["Sentinel", "SentinelMode", "SentinelResult"]

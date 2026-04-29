@@ -5,14 +5,13 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import TracebackType
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlparse
 
 import httpx
 
 from fingerprintiq._http import (
     DEFAULT_ENDPOINT,
-    DEFAULT_TIMEOUT,
     build_async_client,
     build_sync_client,
     raise_for_status,
@@ -20,6 +19,8 @@ from fingerprintiq._http import (
 )
 
 SENTINEL_PATH = "/v1/sentinel/inspect"
+DEFAULT_SENTINEL_TIMEOUT = 1.0
+SentinelMode = Literal["blocking", "background"]
 
 
 @dataclass
@@ -60,7 +61,7 @@ class Sentinel:
         *,
         api_key: str,
         endpoint: str = DEFAULT_ENDPOINT,
-        timeout: float = DEFAULT_TIMEOUT,
+        timeout: float = DEFAULT_SENTINEL_TIMEOUT,
     ) -> None:
         if not api_key:
             raise ValueError("api_key is required")
