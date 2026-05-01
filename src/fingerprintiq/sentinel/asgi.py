@@ -7,12 +7,16 @@ possible; this variant exists for Litestar, raw Starlette, and custom ASGI apps.
 from __future__ import annotations
 
 import asyncio
-from typing import Any
 
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from fingerprintiq._http import DEFAULT_ENDPOINT
-from fingerprintiq.sentinel._core import DEFAULT_SENTINEL_TIMEOUT, Sentinel, SentinelMode
+from fingerprintiq.sentinel._core import (
+    DEFAULT_SENTINEL_TIMEOUT,
+    Sentinel,
+    SentinelMode,
+    SentinelResult,
+)
 
 
 class SentinelASGIMiddleware:
@@ -30,7 +34,7 @@ class SentinelASGIMiddleware:
         self.app = app
         self._client = Sentinel(api_key=api_key, endpoint=endpoint, timeout=timeout)
         self._mode = mode
-        self._background_tasks: set[asyncio.Task[Any]] = set()
+        self._background_tasks: set[asyncio.Task[SentinelResult | None]] = set()
 
     async def _inspect(
         self,
@@ -38,7 +42,7 @@ class SentinelASGIMiddleware:
         method: str,
         url: str,
         headers: dict[str, str],
-    ) -> Any:
+    ) -> SentinelResult | None:
         try:
             return await self._client.ainspect_raw(method=method, url=url, headers=headers)
         except Exception:

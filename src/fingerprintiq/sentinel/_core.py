@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import TracebackType
-from typing import Any, Literal
+from typing import Literal, TypedDict, Union
 from urllib.parse import urlparse
 
 import httpx
@@ -21,6 +21,40 @@ from fingerprintiq._http import (
 SENTINEL_PATH = "/v1/sentinel/inspect"
 DEFAULT_SENTINEL_TIMEOUT = 1.0
 SentinelMode = Literal["blocking", "background"]
+JsonValue = Union[
+    str,
+    int,
+    float,
+    bool,
+    None,
+    list["JsonValue"],
+    Mapping[str, "JsonValue"],
+]
+JsonObject = Mapping[str, JsonValue]
+
+
+class SentinelInspectBody(TypedDict):
+    userAgent: str
+    headers: dict[str, str]
+    method: str
+    path: str
+
+
+def _as_json_object(value: JsonValue | None) -> JsonObject:
+    return value if isinstance(value, Mapping) else {}
+
+
+def _as_float(value: JsonValue | None, default: float = 0.0) -> float:
+    if isinstance(value, bool):
+        return default
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value)
+        except ValueError:
+            return default
+    return default
 
 
 @dataclass
@@ -33,18 +67,18 @@ class SentinelResult:
     caller_type: str
     confidence: float
     reasons: list[str] = field(default_factory=list)
-    metadata: Mapping[str, Any] = field(default_factory=dict)
-    raw: Mapping[str, Any] = field(default_factory=dict)
+    metadata: JsonObject = field(default_factory=dict)
+    raw: JsonObject = field(default_factory=dict)
 
     @classmethod
-    def from_api(cls, data: Mapping[str, Any]) -> SentinelResult:
+    def from_api(cls, data: JsonObject) -> SentinelResult:
         reasons_raw = data.get("reasons") or []
         reasons = [str(r) for r in reasons_raw] if isinstance(reasons_raw, list) else []
         return cls(
             caller_type=str(data.get("callerType", "unknown")),
-            confidence=float(data.get("confidence", 0.0)),
+            confidence=_as_float(data.get("confidence")),
             reasons=reasons,
-            metadata=dict(data.get("metadata") or {}),
+            metadata=dict(_as_json_object(data.get("metadata"))),
             raw=dict(data),
         )
 
@@ -91,7 +125,7 @@ class Sentinel:
         method: str,
         url: str,
         headers: Mapping[str, str],
-    ) -> dict[str, Any]:
+    ) -> SentinelInspectBody:
         parsed = urlparse(url)
         user_agent = ""
         for key, value in headers.items():

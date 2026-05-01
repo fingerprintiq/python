@@ -16,7 +16,6 @@ import sys
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Any
 
 
 @dataclass
@@ -45,9 +44,9 @@ class MachineFingerprint:
     is_tty: bool
     terminal_columns: int | None
     wsl_distro: str | None
-    process_versions: Mapping[str, Any] = field(default_factory=dict)
+    process_versions: Mapping[str, str] = field(default_factory=dict)
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> dict[str, object]:
         return asdict(self)
 
 
